@@ -73,10 +73,12 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     Scores a single song against a user's preferences.
 
-    Scoring algorithm:
-      +2.0  genre match
-      +1.5  mood match
-      +0.0–1.0  energy proximity  (1.0 - |song_energy - user_energy|)
+    Scoring algorithm (EXPERIMENT — Weight Shift):
+      +1.0  genre match        (was +2.0, halved to reduce genre dominance)
+      +1.5  mood match         (unchanged)
+      +0.0–2.0  energy proximity  (2.0 * (1.0 - |song_energy - user_energy|), doubled)
+
+    Max score unchanged at 4.5 — weights redistributed, not inflated.
 
     Returns:
         (score, reasons)  where reasons is a list of human-readable strings.
@@ -85,15 +87,15 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     reasons: List[str] = []
 
     if song["genre"].lower() == user_prefs.get("genre", "").lower():
-        score += 2.0
-        reasons.append(f"genre match (+2.0)")
+        score += 1.0
+        reasons.append(f"genre match (+1.0)")
 
     if song["mood"].lower() == user_prefs.get("mood", "").lower():
         score += 1.5
         reasons.append(f"mood match (+1.5)")
 
     target_energy = float(user_prefs.get("energy", 0.5))
-    energy_score = round(1.0 - abs(song["energy"] - target_energy), 3)
+    energy_score = round(2.0 * (1.0 - abs(song["energy"] - target_energy)), 3)
     score += energy_score
     reasons.append(f"energy proximity {song['energy']:.2f} vs {target_energy:.2f} (+{energy_score:.2f})")
 

@@ -124,6 +124,305 @@ You can add more tests in `tests/test_recommender.py`.
 
 ---
 
+## Terminal Output — All Profiles
+
+Run with:
+
+```bash
+python src/main.py
+```
+
+### Profile 1 — High-Energy Pop
+
+```
+============================================================
+  Profile : High-Energy Pop
+  Prefs   : genre='pop'  mood='happy'  energy=0.9
+============================================================
+
+  #1  Sunrise City  —  Neon Echo
+       Genre/Mood : pop / happy
+       Energy     : 0.82
+       Score      : 4.42
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.82 vs 0.90 (+0.92)
+
+  #2  Gym Hero  —  Max Pulse
+       Genre/Mood : pop / intense
+       Energy     : 0.93
+       Score      : 2.97
+       Why        : genre match (+2.0), energy proximity 0.93 vs 0.90 (+0.97)
+
+  #3  Rooftop Lights  —  Indigo Parade
+       Genre/Mood : indie pop / happy
+       Energy     : 0.76
+       Score      : 2.36
+       Why        : mood match (+1.5), energy proximity 0.76 vs 0.90 (+0.86)
+
+  #4  Honey Static  —  Velvet Margin
+       Genre/Mood : neo soul / happy
+       Energy     : 0.58
+       Score      : 2.18
+       Why        : mood match (+1.5), energy proximity 0.58 vs 0.90 (+0.68)
+
+  #5  Storm Runner  —  Voltline
+       Genre/Mood : rock / intense
+       Energy     : 0.91
+       Score      : 0.99
+       Why        : energy proximity 0.91 vs 0.90 (+0.99)
+```
+
+### Profile 2 — Chill Lofi
+
+```
+============================================================
+  Profile : Chill Lofi
+  Prefs   : genre='lofi'  mood='chill'  energy=0.35
+============================================================
+
+  #1  Library Rain  —  Paper Lanterns
+       Genre/Mood : lofi / chill
+       Energy     : 0.35
+       Score      : 4.50
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.35 vs 0.35 (+1.00)
+
+  #2  Midnight Coding  —  LoRoom
+       Genre/Mood : lofi / chill
+       Energy     : 0.42
+       Score      : 4.43
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.42 vs 0.35 (+0.93)
+
+  #3  Focus Flow  —  LoRoom
+       Genre/Mood : lofi / focused
+       Energy     : 0.40
+       Score      : 2.95
+       Why        : genre match (+2.0), energy proximity 0.40 vs 0.35 (+0.95)
+
+  #4  Spacewalk Thoughts  —  Orbit Bloom
+       Genre/Mood : ambient / chill
+       Energy     : 0.28
+       Score      : 2.43
+       Why        : mood match (+1.5), energy proximity 0.28 vs 0.35 (+0.93)
+
+  #5  Coffee Shop Stories  —  Slow Stereo
+       Genre/Mood : jazz / relaxed
+       Energy     : 0.37
+       Score      : 0.98
+       Why        : energy proximity 0.37 vs 0.35 (+0.98)
+```
+
+### Profile 3 — Deep Intense Rock
+
+```
+============================================================
+  Profile : Deep Intense Rock
+  Prefs   : genre='rock'  mood='intense'  energy=0.95
+============================================================
+
+  #1  Storm Runner  —  Voltline
+       Genre/Mood : rock / intense
+       Energy     : 0.91
+       Score      : 4.46
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.91 vs 0.95 (+0.96)
+
+  #2  Gym Hero  —  Max Pulse
+       Genre/Mood : pop / intense
+       Energy     : 0.93
+       Score      : 2.48
+       Why        : mood match (+1.5), energy proximity 0.93 vs 0.95 (+0.98)
+
+  #3  Reactor Core  —  Static Fault
+       Genre/Mood : drum and bass / intense
+       Energy     : 0.97
+       Score      : 2.48
+       Why        : mood match (+1.5), energy proximity 0.97 vs 0.95 (+0.98)
+
+  #4  Duende Negro  —  Tierra Viva
+       Genre/Mood : flamenco / intense
+       Energy     : 0.78
+       Score      : 2.33
+       Why        : mood match (+1.5), energy proximity 0.78 vs 0.95 (+0.83)
+
+  #5  Lagos Sunrise  —  Fela Wave
+       Genre/Mood : afrobeat / euphoric
+       Energy     : 0.85
+       Score      : 0.90
+       Why        : energy proximity 0.85 vs 0.95 (+0.90)
+```
+
+### Adversarial Profile 1 — Conflicting Energy + Mood
+
+> `genre='pop'`, `mood='melancholic'`, `energy=0.9` — tests whether high energy overrides a sad mood preference.
+
+```
+============================================================
+  Profile : [ADVERSARIAL] Conflicting Energy+Mood
+  Prefs   : genre='pop'  mood='melancholic'  energy=0.9
+============================================================
+
+  #1  Gym Hero  —  Max Pulse
+       Genre/Mood : pop / intense
+       Energy     : 0.93
+       Score      : 2.97
+       Why        : genre match (+2.0), energy proximity 0.93 vs 0.90 (+0.97)
+
+  #2  Sunrise City  —  Neon Echo
+       Genre/Mood : pop / happy
+       Energy     : 0.82
+       Score      : 2.92
+       Why        : genre match (+2.0), energy proximity 0.82 vs 0.90 (+0.92)
+
+  #3  Signal at the Edge  —  Pale Cartographer
+       Genre/Mood : post-rock / melancholic
+       Energy     : 0.67
+       Score      : 2.27
+       Why        : mood match (+1.5), energy proximity 0.67 vs 0.90 (+0.77)
+
+  #4  Glass Reverie  —  Pale Cartographer
+       Genre/Mood : neoclassical / melancholic
+       Energy     : 0.19
+       Score      : 1.79
+       Why        : mood match (+1.5), energy proximity 0.19 vs 0.90 (+0.29)
+
+  #5  Storm Runner  —  Voltline
+       Genre/Mood : rock / intense
+       Energy     : 0.91
+       Score      : 0.99
+       Why        : energy proximity 0.91 vs 0.90 (+0.99)
+```
+
+**Finding:** Genre weight (+2.0) outranks mood weight (+1.5), so cheerful pop tracks beat actually-melancholic songs. The system gets "tricked" by genre alignment.
+
+### Adversarial Profile 2 — Unknown Genre (vaporwave)
+
+> `genre='vaporwave'` — a genre that matches no song in the catalog.
+
+```
+============================================================
+  Profile : [ADVERSARIAL] Unknown Genre (vaporwave)
+  Prefs   : genre='vaporwave'  mood='happy'  energy=0.7
+============================================================
+
+  #1  Rooftop Lights  —  Indigo Parade
+       Genre/Mood : indie pop / happy
+       Energy     : 0.76
+       Score      : 2.44
+       Why        : mood match (+1.5), energy proximity 0.76 vs 0.70 (+0.94)
+
+  #2  Sunrise City  —  Neon Echo
+       Genre/Mood : pop / happy
+       Energy     : 0.82
+       Score      : 2.38
+       Why        : mood match (+1.5), energy proximity 0.82 vs 0.70 (+0.88)
+
+  #3  Honey Static  —  Velvet Margin
+       Genre/Mood : neo soul / happy
+       Energy     : 0.58
+       Score      : 2.38
+       Why        : mood match (+1.5), energy proximity 0.58 vs 0.70 (+0.88)
+
+  #4  Signal at the Edge  —  Pale Cartographer
+       Genre/Mood : post-rock / melancholic
+       Energy     : 0.67
+       Score      : 0.97
+       Why        : energy proximity 0.67 vs 0.70 (+0.97)
+
+  #5  Night Drive Loop  —  Neon Echo
+       Genre/Mood : synthwave / moody
+       Energy     : 0.75
+       Score      : 0.95
+       Why        : energy proximity 0.75 vs 0.70 (+0.95)
+```
+
+**Finding:** No crash — genre match simply never fires. Results gracefully fall back to mood + energy proximity.
+
+### Adversarial Profile 3 — Zero Energy
+
+> `energy=0.0` — the minimum possible energy preference.
+
+```
+============================================================
+  Profile : [ADVERSARIAL] Zero Energy
+  Prefs   : genre='lofi'  mood='chill'  energy=0.0
+============================================================
+
+  #1  Library Rain  —  Paper Lanterns
+       Genre/Mood : lofi / chill
+       Energy     : 0.35
+       Score      : 4.15
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.35 vs 0.00 (+0.65)
+
+  #2  Midnight Coding  —  LoRoom
+       Genre/Mood : lofi / chill
+       Energy     : 0.42
+       Score      : 4.08
+       Why        : genre match (+2.0), mood match (+1.5), energy proximity 0.42 vs 0.00 (+0.58)
+
+  #3  Focus Flow  —  LoRoom
+       Genre/Mood : lofi / focused
+       Energy     : 0.40
+       Score      : 2.60
+       Why        : genre match (+2.0), energy proximity 0.40 vs 0.00 (+0.60)
+
+  #4  Spacewalk Thoughts  —  Orbit Bloom
+       Genre/Mood : ambient / chill
+       Energy     : 0.28
+       Score      : 2.22
+       Why        : mood match (+1.5), energy proximity 0.28 vs 0.00 (+0.72)
+
+  #5  Glass Reverie  —  Pale Cartographer
+       Genre/Mood : neoclassical / melancholic
+       Energy     : 0.19
+       Score      : 0.81
+       Why        : energy proximity 0.19 vs 0.00 (+0.81)
+```
+
+**Finding:** Genre+mood matches still dominate, so the truly lowest-energy song (Glass Reverie, 0.19) only reaches #5. A user wanting near-silence gets lofi tracks at 0.35–0.42 energy instead.
+
+### Adversarial Profile 4 — Empty Preferences
+
+> All categorical fields empty, `energy=0.5` — tests graceful degradation with no genre or mood signal.
+
+```
+============================================================
+  Profile : [ADVERSARIAL] Empty Preferences
+  Prefs   : genre=''  mood=''  energy=0.5
+============================================================
+
+  #1  Midnight Coding  —  LoRoom
+       Genre/Mood : lofi / chill
+       Energy     : 0.42
+       Score      : 0.92
+       Why        : energy proximity 0.42 vs 0.50 (+0.92)
+
+  #2  Honey Static  —  Velvet Margin
+       Genre/Mood : neo soul / happy
+       Energy     : 0.58
+       Score      : 0.92
+       Why        : energy proximity 0.58 vs 0.50 (+0.92)
+
+  #3  Focus Flow  —  LoRoom
+       Genre/Mood : lofi / focused
+       Energy     : 0.40
+       Score      : 0.90
+       Why        : energy proximity 0.40 vs 0.50 (+0.90)
+
+  #4  Chromatic Drift  —  The Polaris Quartet
+       Genre/Mood : jazz fusion / focused
+       Energy     : 0.61
+       Score      : 0.89
+       Why        : energy proximity 0.61 vs 0.50 (+0.89)
+
+  #5  Coffee Shop Stories  —  Slow Stereo
+       Genre/Mood : jazz / relaxed
+       Energy     : 0.37
+       Score      : 0.87
+       Why        : energy proximity 0.37 vs 0.50 (+0.87)
+```
+
+**Finding:** With no genre or mood signal, the max achievable score drops to ~0.92 and results are arbitrary — any song near 0.5 energy wins. The system has no fallback strategy for an anonymous user.
+
+---
+
 ## Experiments You Tried
 
 Use this section to document the experiments you ran. For example:
