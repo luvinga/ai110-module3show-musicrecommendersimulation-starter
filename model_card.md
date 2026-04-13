@@ -1,61 +1,52 @@
 # 🎧 Model Card: Music Recommender Simulation
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
-
----
-
-## 2. Intended Use  
-
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**VibeMatch 1.0**
 
 ---
 
-## 3. How the Model Works  
+## 2. Intended Use
 
-Explain your scoring approach in simple language.  
+VibeMatch suggests the top 5 songs from a small catalog based on three things a user tells it: their preferred genre, their current mood, and how energetic they want the music to feel. It assumes the user knows what they want and can express it in simple words like "pop," "chill," or a number between 0 and 1 for energy. This system is built for classroom exploration — it is not designed for real users or production use. It does not learn from listening history, does not personalize over time, and does not connect to any streaming service.
 
-Prompts:  
-
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+**Non-intended use:** This system should not be used to make real product decisions, should not be used as a substitute for a proper recommendation engine, and should not be applied to catalogs larger than a few hundred songs without significant redesign.
 
 ---
 
-## 4. Data  
+## 3. How the Model Works
 
-Describe the dataset the model uses.  
+For every song in the catalog, the system gives it a score based on how well it matches what the user asked for. The score is the sum of three parts:
 
-Prompts:  
+- **Genre points (+1.0):** If the song's genre exactly matches what the user wants, it gets a bonus. No partial credit — it either matches or it doesn't.
+- **Mood points (+1.5):** Same idea. If the song's mood label matches the user's mood preference, it earns points.
+- **Energy points (0.0 to 2.0):** The system measures how far apart the song's energy level and the user's target energy are. Songs with energy very close to the target score close to 2.0. Songs far away score close to 0.0.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+The five songs with the highest total scores are returned as recommendations. Every result comes with a plain-English explanation showing exactly which parts of the score fired and why.
+
+One change I made from the starter logic: I halved the genre weight from +2.0 to +1.0 and doubled the energy range from 0–1.0 to 0–2.0 after experiments showed that the original genre weight was too dominant — it was overriding mood preferences in profiles where the user's mood and genre pointed in different directions.
 
 ---
 
-## 5. Strengths  
+## 4. Data
 
-Where does your system seem to work well  
+The catalog contains **18 songs** stored in `data/songs.csv`. Each song has 10 attributes: id, title, artist, genre, mood, energy, tempo, valence, danceability, and acousticness. The scoring logic only uses genre, mood, and energy directly — the other attributes are stored but not scored.
 
-Prompts:  
+**Genres represented:** lofi (3 songs), pop (2), and one each of rock, ambient, jazz, synthwave, indie pop, afrobeat, jazz fusion, neoclassical, bossa nova, drum and bass, neo soul, post-rock, and flamenco.
 
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+**Moods represented:** intense (4 songs), happy (3), chill (3), relaxed (2), focused (2), melancholic (2), moody (1), euphoric (1).
+
+No songs were added or removed from the original dataset. The main gaps in the data are: very few low-energy songs (only 5 below 0.4 energy), no songs below energy 0.19, heavy representation of Western and electronic genres, and no representation of classical, country, R&B, or hip-hop. Users whose taste falls outside what is in the catalog will consistently get weak recommendations.
+
+---
+
+## 5. Strengths
+
+The system works best for users with clear, common preferences that the catalog actually covers. A user who wants lofi/chill music at low energy gets an excellent top 5 — three genre matches, two mood matches, and energy scores right on target. A user who wants pop/happy at high energy also gets strong results because both pop and happy are represented well enough for the scores to separate clearly.
+
+The scoring is fully transparent. Every result comes with an explanation showing exactly which components fired and what each contributed to the score. This makes it easy to understand why a song ranked where it did, which is valuable for a learning context.
+
+The system also degrades gracefully on impossible inputs. A user who asks for a genre that does not exist in the catalog (like "vaporwave") does not crash the system — it simply falls back to mood and energy scoring without any error, and still returns a sensible-looking top 5.
 
 ---
 
@@ -100,16 +91,16 @@ The second surprise was the Zero Energy profile. The catalog contains no song be
 
 ---
 
-## 8. Future Work  
+## 8. Future Work
 
-Ideas for how you would improve the model next.  
+**1. Replace genre exact-match with a genre similarity map.**
+Instead of treating "rock" and "post-rock" as completely unrelated, I would build a small dictionary that gives partial credit to similar genres. This would fix the filter bubble problem for niche listeners without changing anything else about the scoring.
 
-Prompts:  
+**2. Add a diversity penalty.**
+Right now the top 5 can be dominated by one artist or one genre cluster. I would subtract a small penalty for each song that shares an artist or genre with a higher-ranked result, so the recommendations feel more varied and exploratory.
 
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+**3. Expand the catalog to at least 100 songs with better energy balance.**
+The current catalog has no songs below energy 0.19 and only 5 below 0.4. Adding more low-energy, ambient, and non-Western songs would fix the high-energy skew that currently penalizes calm listeners — this is a data problem, not an algorithm problem, and more data would fix it faster than any weight adjustment.
 
 ---
 
@@ -122,9 +113,3 @@ Prompts:
 **What surprised me most** was how much the output felt like real recommendations even though the entire algorithm is three lines of arithmetic. Genre match, mood match, and an absolute difference — that is all it takes to produce a ranked list that, for a well-represented profile like Chill Lofi, feels completely natural. Library Rain at #1 with a perfect energy score genuinely seemed like something I would listen to while studying. I kept expecting to find the seam where the simplicity showed, and for standard profiles it mostly didn't. The illusion only broke on the adversarial cases, which made me realize that real recommenders probably feel convincing for the same reason: most users have fairly normal, non-conflicting preferences, so even a simple weighted sum lands in a comfortable place. The edge cases expose the cracks, but average users never push into the edges.
 
 **If I extended this project**, the first thing I would do is replace the strict genre string-equality check with a genre similarity map — a small dictionary where `"indie pop"` and `"pop"` share partial credit, and `"post-rock"` and `"rock"` score closer to each other than `"rock"` and `"lofi"`. That single change would fix the filter-bubble problem for niche genres without touching the rest of the scoring logic. Beyond that, I would add a diversity penalty so the top 5 cannot be monopolized by one artist or one genre cluster, and I would expand the catalog to at least 100 songs with better representation of low-energy, ambient, and non-Western genres. The bias toward high-energy songs is a data problem, not an algorithm problem, and more balanced data would fix it faster than any weight adjustment.
-
-Prompts:  
-
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
