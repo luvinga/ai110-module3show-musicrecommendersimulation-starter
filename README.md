@@ -17,17 +17,75 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real-world recommenders like Spotify's Discover Weekly and YouTube's Up Next work by building a mathematical portrait of your taste from your listening behavior — what you skipped, replayed, saved, or ignored — and then finding items whose attributes sit closest to that portrait in a multi-dimensional feature space. They combine two broad strategies: collaborative filtering, which looks at what users with similar histories enjoyed, and content-based filtering, which compares the intrinsic attributes of songs or videos directly. This simulation focuses on the content-based side. It takes a user's explicitly stated preferences, represents them as a target feature vector, and scores every song in the catalog by measuring how far each track's audio features sit from that target. The features with the most influence on "vibe" — energy and valence — are given higher weights, while supporting features like danceability and tempo refine the ranking. The system prioritizes transparency and interpretability over scale: every score is explainable as a weighted sum of feature proximities, which makes it easy to trace why a specific song was ranked first or last.
 
-Some prompts to answer:
+### `Song` Features
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+Each `Song` object stores the following attributes drawn from `data/songs.csv`:
 
-You can include a simple diagram or bullet list if helpful.
+| Feature | Type | Role |
+|---|---|---|
+| `id` | Integer | Unique identifier |
+| `title` | String | Display name |
+| `artist` | String | Artist name |
+| `genre` | String (categorical) | Hard-filter and categorical score |
+| `mood` | String (categorical) | Secondary categorical score |
+| `energy` | Float (0.0–1.0) | Primary vibe axis — intensity and activity level |
+| `tempo_bpm` | Integer | Rhythmic pace (normalized before scoring) |
+| `valence` | Float (0.0–1.0) | Emotional positivity — sad to euphoric |
+| `danceability` | Float (0.0–1.0) | Groove and rhythmic regularity |
+| `acousticness` | Float (0.0–1.0) | Organic vs. produced texture |
+
+### `UserProfile` Features
+
+Each `UserProfile` object stores the user's target preferences using the same feature vocabulary as `Song`, so scoring is a direct comparison between the two:
+
+| Feature | Type | Role |
+|---|---|---|
+| `preferred_genre` | String | Matched categorically against `song.genre` |
+| `preferred_mood` | String | Matched categorically against `song.mood` |
+| `target_energy` | Float (0.0–1.0) | Target energy level for scoring |
+| `target_valence` | Float (0.0–1.0) | Target emotional positivity for scoring |
+| `target_danceability` | Float (0.0–1.0) | Target groove level for scoring |
+| `target_tempo_bpm` | Integer | Target tempo (normalized before scoring) |
+| `weights` | Dict | Per-feature importance multipliers (must sum to 1.0) |
+
+### Scoring and Recommendation Logic
+
+**Algorithm Recipe — finalized**
+
+For each song in the catalog, four components are computed and summed into a single score:
+
+| Component | Rule | Max Points | Rationale |
+|---|---|---|---|
+| Genre match | `+2.0` if `song.genre == user.favorite_genre` | 2.0 | Strongest taste signal — wrong genre overrides everything else |
+| Mood match | `+1.0` if `song.mood == user.favorite_mood` | 1.0 | Important but softer — users sometimes cross mood boundaries |
+| Energy proximity | `1.5 × (1 − |song.energy − user.target_energy|)` | 1.5 | Best continuous predictor of "feel"; rewards closeness on a 0–1 scale |
+| Acoustic bonus | `+0.5` if `user.likes_acoustic` and `song.acousticness ≥ 0.6` | 0.5 | Tiebreaker preference, not a primary filter |
+
+**Maximum possible score: 5.0**
+
+```
+score = genre_pts + mood_pts + energy_pts + acoustic_bonus
+
+For each song in catalog:
+  1. genre_pts   = 2.0 if genre matches, else 0.0
+  2. mood_pts    = 1.0 if mood matches, else 0.0
+  3. energy_pts  = 1.5 × (1 − |song.energy − target_energy|)
+  4. acoustic_bonus = 0.5 if likes_acoustic and song.acousticness ≥ 0.6, else 0.0
+  5. score = sum of above
+  6. explanation = list of which components fired
+
+Sort all scored songs by score descending.
+Return top K as (song, score, explanation) tuples.
+```
+
+### Potential Biases
+
+- **Genre over-prioritization.** Because genre carries 2.0 points — double the weight of mood — a perfect mood-and-energy match in the wrong genre will almost always rank below a mediocre genre match. A chill neo-soul track with exactly the right energy can be beaten by an unfamiliar pop song just because the genre string matches. This may cause the system to miss genuinely great cross-genre discoveries.
+- **Catalog representation bias.** The 18-song catalog skews toward certain genres (lofi, pop, rock) and is absent entire regions of global music. Users with preferences for underrepresented styles will consistently receive low scores across the board, not because their taste is niche, but because the data is thin.
+- **Energy linearity assumption.** The energy proximity formula treats the distance from 0.3 to 0.5 the same as from 0.7 to 0.9. In practice, human perception of intensity is not linear — the difference between very calm and medium-calm may feel larger than the formula suggests.
+- **Binary acoustic threshold.** Acousticness is treated as an on/off bonus at 0.6. Songs just below that threshold (e.g., 0.58) are penalized equally with fully electronic tracks, even though they may still satisfy a user who leans acoustic.
 
 ---
 
